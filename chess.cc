@@ -132,11 +132,11 @@ Figura chess_board[rows][columns]
     {b(rook),b(knight),b(bishop),b(queen),b(king),b(bishop),b(knight),b(rook)},
     {b(pawns),b(pawns),b(pawns),b(pawns),b(pawns),b(pawns),b(pawns),b(pawns)},
     {kletka,kletka,kletka,kletka,kletka,kletka,kletka,kletka},
-    {kletka,w(knight),kletka,w(bishop),kletka,w(queen),w(knight),kletka},
-    {kletka,kletka,kletka,kletka,kletka,w(bishop),kletka,kletka},
+    {kletka,kletka,kletka,kletka,kletka,kletka,kletka,kletka},
+    {kletka,kletka,kletka,kletka,kletka,kletka,kletka,kletka},
     {kletka,kletka,kletka,kletka,kletka,kletka,kletka,kletka},
     {w(pawns),w(pawns),w(pawns),w(pawns),w(pawns),w(pawns),w(pawns),w(pawns)},
-    {w(rook),kletka,kletka,kletka,w(king),kletka,kletka,w(rook)}
+    {w(rook),w(knight),w(bishop),w(queen),w(king),w(bishop),w(knight),w(rook)}
 };
 
 class Move{
@@ -830,7 +830,6 @@ std::vector<Move> king_danger(std::vector<Move> figure_move, Board board){
             figure_move_not_king_d.push_back(Move(figure_move[i].y,figure_move[i].x,figure_move[i].change_y,figure_move[i].change_x));
             
         }
-        field(copy_board);
     }
     return figure_move_not_king_d;
 }
@@ -963,9 +962,11 @@ int check_value_castling_short(Color sym,Board& board){
                 field(board);
                 return 1;
             }else{
+                std::cout << "Рокировка невозможна"<< std::endl;
                 return 0;
             }
         }else{
+            std::cout << "Рокировка невозможна"<< std::endl;
             return 0;
         }
     }else{
@@ -977,14 +978,25 @@ int check_value_castling_short(Color sym,Board& board){
                 field(board);
                 return 1;
             }else{
+                std::cout << "Рокировка невозможна"<< std::endl;
                 return 0;
             }
         }else{
+            std::cout << "Рокировка невозможна"<< std::endl;
             return 0;
         }
     }
 }
 
+int check_valid_move(Board& board,int y,int x,std::vector <Move>possible_move){
+    for(int j = 0; j < possible_move.size(); j++){
+        if(possible_move[j].change_y == y && possible_move[j].change_x == x){
+            possible_move[j].move_figura(board);
+            return 1;  
+        }
+    }
+    return 0;
+}
 
 void play_game(Board board){
     std::string input = {};
@@ -992,8 +1004,15 @@ void play_game(Board board){
     int change_y,change_x;
     Color sym = white;
     std::vector <Move> possible_move;
+    std::vector <Move> move_zero;
     
     for(int play = 0;play < 1;){
+        move_zero = build_maps_move(sym,board);
+        move_zero = king_danger(move_zero,board);
+        if(!move_zero.size()){
+            std::cout << "Победа " << ((sym == white) ? "белых" : "черных") << std::endl;
+            break;
+        }
         field(board);
         for(int i = 0; ; ){
             std::cout << "Выберите фигуру: " << ((sym == white) ? "Ход белых" : "Ход черных") << std::endl;
@@ -1006,7 +1025,6 @@ void play_game(Board board){
                     sym = change_move(sym);
                     continue;
                 }else{
-                    std::cout << "Рокировка невозможна"<< std::endl;
                     continue;
                 }
             }
@@ -1015,13 +1033,13 @@ void play_game(Board board){
                     sym = change_move(sym);
                     continue;
                 }else{
-                    std::cout << "Рокировка невозможна"<< std::endl;
                     continue;
                 }
             }
             x = conversion_x(input);
             y = conversion_y(input);
             possible_move = karta(board,y,x);
+            possible_move = king_danger(possible_move,board);
             if(check_value_input(board,y,x,possible_move,sym)){
                 break;
             }else{
@@ -1042,14 +1060,9 @@ void play_game(Board board){
             }
             change_x = conversion_x(input);
             change_y = conversion_y(input);
-            for(int j = 0; j < possible_move.size(); j++){
-                if(possible_move[j].change_y == change_y && possible_move[j].change_x == change_x){
-                    possible_move[j].move_figura(board);
-                    i = 1;
-                    break;
-                }
-            }
-            if(!i){
+            if(check_valid_move(board,change_y,change_x,possible_move)){
+                break;
+            }else{
                 std:: cout << "Выбран неверный ход"<< std::endl;
                 continue;
             }
